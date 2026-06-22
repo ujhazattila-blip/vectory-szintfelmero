@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vectory ERP szintfelmérő</title>
+<style>
+  :root{
+    --piros:#c0392b; --piros-sotet:#9b2d22; --sarga:#f1c40f;
+    --szurke:#f4f5f7; --szoveg:#1f2733; --halvany:#6b7480;
+    --zold:#2e9e5b; --kek:#2c6fb5; --vonal:#e2e6ea; --feher:#ffffff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--szurke);color:var(--szoveg);line-height:1.55}
+  .wrap{max-width:880px;margin:0 auto;padding:24px 18px 80px}
+  header.fo{background:var(--piros);color:#fff;padding:28px 18px;text-align:center}
+  header.fo h1{font-size:26px;letter-spacing:.5px}
+  header.fo p{opacity:.92;margin-top:6px;font-size:15px}
+  .kartya{background:var(--feher);border:1px solid var(--vonal);border-radius:12px;padding:26px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  h2.szekcio{font-size:19px;color:var(--piros-sotet);border-bottom:2px solid var(--sarga);padding-bottom:8px;margin-bottom:6px}
+  .szekcio-info{font-size:13px;color:var(--halvany);margin-bottom:18px}
+  .kerdes{padding:16px 0;border-bottom:1px solid var(--vonal)}
+  .kerdes:last-child{border-bottom:none}
+  .kerdes-cim{font-weight:600;margin-bottom:10px}
+  .kerdes-cim .szam{color:var(--piros);margin-right:6px}
+  label.valasz{display:flex;align-items:flex-start;gap:10px;padding:11px 13px;border:1px solid var(--vonal);border-radius:8px;margin-bottom:8px;cursor:pointer;transition:.12s}
+  label.valasz:hover{background:#fafbfc;border-color:#cdd3da}
+  label.valasz input{margin-top:3px;flex-shrink:0;width:18px;height:18px;accent-color:var(--piros)}
+  label.valasz.zar{opacity:.6;cursor:not-allowed}
+  textarea{width:100%;min-height:90px;padding:11px;border:1px solid var(--vonal);border-radius:8px;font-family:inherit;font-size:14px;resize:vertical}
+  textarea:focus,input[type=text]:focus{outline:none;border-color:var(--piros)}
+  input[type=text]{width:100%;padding:12px;border:1px solid var(--vonal);border-radius:8px;font-size:15px;font-family:inherit}
+  .mezo{margin-bottom:16px}
+  .mezo label{display:block;font-weight:600;margin-bottom:6px;font-size:14px}
+  .gomb{display:inline-block;background:var(--piros);color:#fff;border:none;padding:14px 30px;border-radius:9px;font-size:16px;font-weight:600;cursor:pointer;transition:.15s}
+  .gomb:hover{background:var(--piros-sotet)}
+  .gomb.masodlagos{background:#fff;color:var(--piros);border:2px solid var(--piros)}
+  .gomb.masodlagos:hover{background:#fdecea}
+  .gomb:disabled{background:#bbb;cursor:not-allowed}
+  .gombsor{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+  .rejtett{display:none!important}
+  .info-doboz{background:#fff8e1;border:1px solid var(--sarga);border-radius:9px;padding:14px 16px;margin:16px 0;font-size:14px}
+  .info-doboz ul{margin:8px 0 0 20px}
+  .info-doboz li{margin-bottom:4px}
+  /* halado sav */
+  .halado-sor{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:14px;color:var(--halvany)}
+  .halado-kuls{height:8px;background:#e7eaee;border-radius:6px;overflow:hidden;margin-bottom:20px}
+  .halado-bel{height:100%;background:var(--piros);width:0;transition:width .3s}
+  /* visszaszamlalo */
+  .ido-fej{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
+  .ido-cimke{font-size:13px;color:var(--halvany);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+  .ido-szam{font-size:34px;font-weight:700;color:var(--zold);min-width:62px;text-align:right;font-variant-numeric:tabular-nums}
+  .ido-szam.fele{color:#e8a317}
+  .ido-szam.veszely{color:var(--piros)}
+  .ido-kuls{height:10px;background:#e7eaee;border-radius:6px;overflow:hidden;margin-bottom:8px}
+  .ido-bel{height:100%;background:var(--zold);width:100%;transition:width 1s linear}
+  .ido-bel.fele{background:#e8a317}
+  .ido-bel.veszely{background:var(--piros)}
+  .lejart-jel{background:#fdecea;border:1px solid var(--piros);color:var(--piros-sotet);border-radius:8px;padding:10px 12px;font-size:14px;font-weight:600;margin-top:12px;display:none}
+  /* eredmeny */
+  .pontdoboz{text-align:center;padding:24px;border-radius:12px;color:#fff;margin-bottom:8px}
+  .pontdoboz .nagy{font-size:46px;font-weight:700;line-height:1}
+  .pontdoboz .szaz{font-size:18px;margin-top:6px;opacity:.95}
+  .pontdoboz .min{font-size:20px;margin-top:8px;font-weight:600}
+  .pontdoboz .alcim{opacity:.9;margin-top:4px;font-size:14px}
+  .reszpont{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--vonal);font-size:15px}
+  .reszpont:last-child{border-bottom:none}
+  .reszpont .ertek{font-weight:600}
+  .jo{color:var(--zold)}
+  .rossz{color:var(--piros)}
+  .valasz.helyes-jeloles{border-color:var(--zold);background:#eafaf0}
+  .valasz.rossz-jeloles{border-color:var(--piros);background:#fdecea}
+  .jav-blokk{border:1px solid var(--vonal);border-radius:10px;padding:16px;margin-bottom:14px;background:#fafbfc}
+  .jav-blokk .qcim{font-weight:600;margin-bottom:8px}
+  .jav-valasz{background:#fff;border:1px solid var(--vonal);border-radius:8px;padding:10px;font-size:14px;white-space:pre-wrap;min-height:38px;margin-bottom:10px}
+  .kulcs{background:#eef5fb;border-left:3px solid var(--kek);border-radius:6px;padding:10px 12px;font-size:13.5px;margin-bottom:10px}
+  .kulcs b{color:var(--kek)}
+  .pontvalaszto{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .pontvalaszto label{font-weight:600;font-size:14px}
+  .pontvalaszto select{padding:8px 10px;border:1px solid var(--vonal);border-radius:7px;font-size:15px}
+  .badge{display:inline-block;background:var(--piros);color:#fff;font-size:12px;font-weight:600;padding:2px 9px;border-radius:20px;margin-left:6px;vertical-align:middle}
+  .figyelmeztetes{color:var(--piros);font-size:14px;margin-top:8px;display:none}
+  @media print{
+    body{background:#fff}
+    .nyomtatas-rejtett{display:none!important}
+    .kartya{box-shadow:none;border:1px solid #ccc;page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<header class="fo">
+  <h1>Vectory ERP szintfelmérő</h1>
+  <p>Piramis Építőház Kft.</p>
+</header>
+
+<div class="wrap">
+
+  <!-- ===== KEZDOKEPERNYO ===== -->
+  <section id="kepernyo-start">
+    <div class="kartya">
+      <h2 class="szekcio">Üdvözlünk a szintfelmérőn</h2>
+      <p style="margin:14px 0">Ez a teszt a Vectory ERP rendszer használati ismereteit méri fel. A kitöltés után az oktató a gyakorlati részeket a helyszínen, veled együtt értékeli.</p>
+      <div class="info-doboz">
+        A teszt felépítése:
+        <ul>
+          <li>I. Választós kérdések, <b id="info-I"></b></li>
+          <li>II. Igaz / hamis, <b id="info-II"></b></li>
+          <li>III. Gyakorlati kérdések, 12 pont</li>
+          <li>IV. Gyakorlati feladatok, 8 pont</li>
+        </ul>
+        <p style="margin-top:10px"><b>Fontos:</b> az I. és II. szekció kérdései egyesével jelennek meg, és kérdésenként 30 másodperc áll rendelkezésre. Ha lejár az idő, a kérdés lezárul és a teszt automatikusan a következő kérdésre lép. Visszalépni nem lehet.</p>
+      </div>
+      <div class="mezo">
+        <label for="nev">Neved (kötelező)</label>
+        <input type="text" id="nev" placeholder="Pl. Kovács Anna" autocomplete="off">
+      </div>
+      <div class="mezo">
+        <label for="oktato">Oktató / vizsgáztató neve (nem kötelező)</label>
+        <input type="text" id="oktato" placeholder="Pl. Nagy Péter" autocomplete="off">
+      </div>
+      <div class="figyelmeztetes" id="nev-fig">Kérlek add meg a neved a kezdéshez.</div>
+      <div class="gombsor">
+        <button class="gomb" id="start-gomb">Teszt indítása</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== IDOZITETT KERDESEK (I + II) ===== -->
+  <section id="kepernyo-idozitett" class="rejtett">
+    <div class="kartya">
+      <div class="halado-sor">
+        <span id="halado-szoveg"></span>
+        <span id="szekcio-cimke"></span>
+      </div>
+      <div class="halado-kuls"><div class="halado-bel" id="halado-bel"></div></div>
+
+      <div class="ido-fej">
+        <span class="ido-cimke">Hátralévő idő</span>
+        <span class="ido-szam" id="ido-szam">30</span>
+      </div>
+      <div class="ido-kuls"><div class="ido-bel" id="ido-bel"></div></div>
+
+      <div id="kerdes-tartalom" style="margin-top:18px"></div>
+      <div class="lejart-jel" id="lejart-jel">Lejárt az idő erre a kérdésre. Továbblépés a következőre...</div>
+
+      <div class="gombsor">
+        <button class="gomb" id="tovabb-gomb" type="button">Következő kérdés</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== GYAKORLATI RESZ (III + IV) ===== -->
+  <section id="kepernyo-gyakorlati" class="rejtett">
+    <form id="gyak-form"></form>
+    <div class="kartya">
+      <p style="font-size:14px;color:var(--halvany);margin-bottom:12px">Ezt a részt az oktató a helyszínen pontozza. Ha kész vagy, küldd be a tesztet.</p>
+      <div class="gombsor">
+        <button class="gomb" id="bekuld-gomb" type="button">Teszt beküldése</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== EREDMENY / JAVITAS ===== -->
+  <section id="kepernyo-eredmeny" class="rejtett">
+    <div id="eredmeny-tartalom"></div>
+  </section>
+
+</div>
+
+<script>
+/* ====== KONFIGURACIO ====== */
+const KERDES_IDO = 30;   // másodperc / kérdés az I. és II. szekcióban
+
+/* ====== ADATOK ====== */
+/* I. Választós kérdések - mindegyik pontosan 4 válaszlehetőséggel.
+   tobb:true = több helyes válasz. helyes = helyes indexek. pont = max pont. */
+const valasztos = [
+  {sz:1, k:"Mit jelentenek a sárga színű ügyfelek a tallózás nézetben?",
+   o:["Webes vevő","Szállítási cím","E-számlás ügyfél","Papír alapú, központi ügyfél"], helyes:[2], pont:1},
+  {sz:2, k:"Hol rögzítjük az ügyfél telefonszámát?",
+   o:["Kommunikáció fülön","Személyek fülön","Tulajdonságok fülön","Naplózás fülön"], helyes:[1], pont:1},
+  {sz:3, k:"Ki vásárolhat fordított áfával vasanyagot?",
+   o:["Megfelelő dokumentálás után csak cégek","Megfelelő dokumentálás után csak magánszemély","Megfelelő dokumentálás után cég és magánszemély is","Bárki, külön dokumentálás nélkül"], helyes:[0], pont:1},
+  {sz:4, k:"Hogyan rögzítünk szállítási címet?",
+   o:["Ugyanúgy, ahogy a számlázási címet, új ügyfélként","Számlázási címből indítva: File / Ismétlés","A meglévő ügyfél számlázási címét egyszerűen átírjuk","A rendelés felvitelekor egyszeri jelleggel beírjuk"], helyes:[1], pont:1},
+  {sz:5, k:"Mit jelent a cikktörzsben, ha egy cikk sárga?",
+   o:["Tiltott cikk","Belső (kifutó) cikk","Nincs jelentősége","Akciós cikk"], helyes:[1], pont:1},
+  {sz:6, k:"Melyik a legmagasabb eladási árunk?",
+   o:["Piramis kisker ár","Családiházas, nagytételes ár","Kivitelezői ár","Online kedvezményes ár"], helyes:[0], pont:1},
+  {sz:7, k:"Melyik állítás igaz az ajánlatra (VA)? (több válasz is helyes)",
+   o:["Nem foglalja a készletet","Rendeléssé alakítható","Többféle verzió készíthető belőle","Foglalja a készletet"], helyes:[0,1,2], pont:3, tobb:true},
+  {sz:8, k:"Melyik állítás igaz a rendelésre (VR)?",
+   o:["Foglalja a készletet","Nem foglal készletet","Többféle verzió készíthető belőle","Nem alakítható szállítólevéllé"], helyes:[0], pont:1},
+  {sz:9, k:"Melyik billentyűkombinációval tudunk raklapot és logdíjat hozzáadni?",
+   o:["Ctrl + G","Alt + G","Ctrl + L","Shift + G"], helyes:[0], pont:1},
+  {sz:10, k:"Melyik billentyűkombinációval tudjuk határidőzni a cikkeket a rendelésen?",
+   o:["Ctrl + D","Shift + D","Ctrl + H","Alt + D"], helyes:[0], pont:1},
+  {sz:11, k:"Honnan tudjuk, hogy egy díjbekérő ki van-e fizetve?",
+   o:["A bizonylatszáma FE, ha fizetve van","A bizonylatszáma E, ha fizetve van","A bizonylatszáma O, ha fizetve van","A bizonylatszáma G, ha fizetve van"], helyes:[1], pont:1},
+  {sz:12, k:"Mit teszünk, ha egy termék hiányban van?",
+   o:["Vectory feladatkezelőn jelezzük a beszerzésnek","E-mailt írunk a beszerzésnek","Telefonon felhívjuk a beszerzést","Személyesen megkeressük a beszerzőt"], helyes:[0], pont:1},
+  {sz:13, k:"Milyen esetben készítünk alrendelést?",
+   o:["Csak ha a vevő több alkalommal viszi el","Csak ha saját autónk (Piramis) szállít több alkalommal","Mindkét esetben","Minden rendelésnél kötelező"], helyes:[1], pont:1},
+  {sz:14, k:"Ha egy rendelés főrendelés, akkor:",
+   o:["Csak a főrendelésből készíthető szállítólevél","Csak az alrendelésből készíthető szállítólevél","Mindkettőből készíthető","Egyikből sem készíthető szállítólevél"], helyes:[1], pont:1},
+  {sz:15, k:"Hogyan hat a szállítólevél a készletre?",
+   o:["Nincs hatása","Foglalja a készletet","Levonja (leveszi) a készletet","Növeli a készletet"], helyes:[2], pont:1},
+  /* --- 10 ÚJ KÉRDÉS --- */
+  {sz:16, k:"Meddig vehetünk vissza terméket (nem építőanyag.hu vásárlás esetén)?",
+   o:["A vásárlástól számított 14 napig","A vásárlástól számított 1 hónapig","A vásárlástól számított 2 hónapig","A vásárlástól számított 6 hónapig"], helyes:[2], pont:1},
+  {sz:17, k:"Mekkora kezelési költséget vonunk le termék visszavételekor (nem webshopos vásárlás)?",
+   o:["10%","20%","33%","Nincs levonás"], helyes:[1], pont:1},
+  {sz:18, k:"Egy szállítólevelet legkésőbb hány napon belül kell kiszámlázni?",
+   o:["Még aznap kötelező","8 napon belül","15 napon belül","30 napon belül"], helyes:[1], pont:1},
+  {sz:19, k:"Meddig kell visszaszállítani a raklapot, hogy a betéti díjat visszafizessük?",
+   o:["30 napon belül","90 napon belül","180 napon belül","1 éven belül"], helyes:[2], pont:1},
+  {sz:20, k:"Az építőanyag.hu-n vásárló magánszemély hány napon belül állhat el a vásárlástól indoklás nélkül?",
+   o:["8 napon belül","14 napon belül","30 napon belül","2 hónapon belül"], helyes:[1], pont:1},
+  {sz:21, k:"Melyik billentyűkombinációval exportáljuk a tallózás nézetet Excelbe?",
+   o:["Ctrl + E","Alt + Enter","Ctrl + X","Alt + F11"], helyes:[1], pont:1},
+  {sz:22, k:"Milyen karakterekkel végezhetünk rugalmas, szabad szavas keresést a Vectoryban?",
+   o:["* vagy %","# vagy @","? vagy !","& vagy /"], helyes:[0], pont:1},
+  {sz:23, k:"Jóváíró számla esetén a pénztár mekkora összegig fizethet vissza készpénzben?",
+   o:["20 000 Ft-ig","50 000 Ft-ig","100 000 Ft-ig","500 000 Ft-ig"], helyes:[1], pont:1},
+  {sz:24, k:"Maximum mekkora összeget fizethet a vevő készpénzben az áru átvételekor?",
+   o:["750 000 Ft","1 000 000 Ft","1 500 000 Ft","Nincs felső határ"], helyes:[2], pont:1},
+  {sz:25, k:"Melyik bizonylat NEM adóügyi bizonylat?",
+   o:["E – Előlegszámla","FE – Fizetési értesítő","G – Belföldi vevőszámla","N – Belföldi vevőszámla"], helyes:[1], pont:1}
+];
+
+/* II. Igaz / hamis. helyes: true = IGAZ, false = HAMIS */
+const igazhamis = [
+  {sz:1, k:"Felhasználónevet és jelszót kell megadnunk a belépéshez.", helyes:false},
+  {sz:2, k:"Az ajánlat automatikusan 30 nap után lezáródik.", helyes:true},
+  {sz:3, k:"Egy rendelésen több raktár is szerepelhet.", helyes:false, megj:"egy rendelésen csak egy raktár lehet"},
+  {sz:4, k:"A Vectory-ban lévő nyitott feladatok automatikusan lezáródnak 30 nap után.", helyes:false},
+  {sz:5, k:"Termék vagy raklap visszavét esetén készpénzes visszafizetésnél is átutalásként rögzítünk jóváíró számlát.", helyes:true},
+  {sz:6, k:"Céges vevő egy hónapban max. 1 500 000 Ft-ot fizethet készpénzben.", helyes:true, megj:"cégnél tilos 1,5M felett kp."},
+  {sz:7, k:"Külföldi cégnek csak akkor állíthatunk ki áfamentes számlát, ha az árut kiviszi az országból.", helyes:true}
+];
+
+/* III. Gyakorlati kérdések (oktató pontoz, 0-3) */
+const gyak_kerdes = [
+  {sz:1, k:"Mi a különbség az előlegszámla (E) és a fizetési értesítő (FE) között?", pont:3,
+   kulcs:["FE: nem adóügyi bizonylat, fizetés előtt készül","E: adóügyi bizonylat, beérkezett pénz után jön létre"]},
+  {sz:2, k:"Egy céges ügyfél e-számlát kér. Írd le a folyamatot!", pont:3,
+   kulcs:["Nyilatkozat kitöltése és aláírása","Szkennelés és pénzügynek átadás","Csak ezután állítható be e-számla"]},
+  {sz:3, k:"Egy vevő fordított áfával vásárolna vasanyagot. Mik a feltételek?", pont:3,
+   kulcs:["Csak cég vásárolhat","Nyilatkozat + aláírási címpéldány","Ügyféltörzs beállítás (Fordított adós nyilatkozat van)","Magánszemélynek tilos"]},
+  {sz:4, k:"Az ügyfél nem ad meg elérhetőséget. Mit rögzítesz?", pont:3,
+   kulcs:["Kommunikáció fül, E-mail cím típus, érték: nem@nem.hu"]}
+];
+
+/* IV. Gyakorlati feladatok (oktató pontoz, 0-2) */
+const gyak_feladat = [
+  {sz:1, k:"Ügyfél rögzítése + szállítási cím", pont:2,
+   kulcs:["Új ügyfél","File / Ismétlés","Szállítási cím pipálása"]},
+  {sz:2, k:"Ajánlat készítése + 2 verzió", pont:2,
+   kulcs:["VA létrehozás","Verzió mentése módosításkor"]},
+  {sz:3, k:"Rendelés + alrendelés készítése", pont:2,
+   kulcs:["VR besorolása: Főrendelés","Bontás (Ctrl+Alt+B)","Kiszállításokra bontás"]},
+  {sz:4, k:"Helyszíni fizetés esetén szállítólevél + számla", pont:2,
+   kulcs:["Szállítólevél + számla egy lépésben: Számlából indítva"]}
+];
+
+/* ====== ARANYOS, SZAZALEKOS ERTEKELES ====== */
+const SKALA = [
+  {minSzaz:85, szint:"Kiváló",  minosites:"Önálló munkára alkalmas",   szin:"#2e9e5b"},
+  {minSzaz:70, szint:"Közepes", minosites:"Kisebb segítséggel dolgozik", szin:"#e8a317"},
+  {minSzaz:0,  szint:"Gyenge",  minosites:"Betanítás még szükséges",    szin:"#c0392b"}
+];
+
+/* ====== SZAMITOTT OSSZEGEK ====== */
+const MAX_I  = valasztos.reduce((a,q)=>a+q.pont,0);
+const MAX_II = igazhamis.length;
+const MAX_III = gyak_kerdes.reduce((a,q)=>a+q.pont,0);
+const MAX_IV  = gyak_feladat.reduce((a,q)=>a+q.pont,0);
+const OSSZ_PONT = MAX_I+MAX_II+MAX_III+MAX_IV;
+
+function minosit(ossz){
+  const szaz = ossz/OSSZ_PONT*100;
+  const sz = SKALA.find(s=>szaz>=s.minSzaz);
+  return {szaz:Math.round(szaz), ...sz};
+}
+
+/* ====== ALLAPOT ====== */
+let kitoltoNev="", oktatoNev="", kezdes=null;
+let idozitettLista=[];          // {tag:'I'|'II', q}
+let aktIndex=0;
+let kerdesTimer=null, hatra=0;
+const valaszokI={};             // sz -> [indexek]
+const valaszokII={};            // sz -> 'igaz'|'hamis'|null
+
+/* ====== START KEPERNYO INFO ====== */
+document.getElementById('info-I').textContent  = valasztos.length+" kérdés, "+MAX_I+" pont";
+document.getElementById('info-II').textContent = igazhamis.length+" kérdés, "+MAX_II+" pont";
+
+document.getElementById('start-gomb').addEventListener('click',()=>{
+  const nev=document.getElementById('nev').value.trim();
+  if(!nev){document.getElementById('nev-fig').style.display='block';return;}
+  kitoltoNev=nev;
+  oktatoNev=document.getElementById('oktato').value.trim();
+  kezdes=new Date();
+  // idozitett lista osszeallitasa: I szekcio, majd II szekcio
+  idozitettLista=[
+    ...valasztos.map(q=>({tag:'I',q})),
+    ...igazhamis.map(q=>({tag:'II',q}))
+  ];
+  aktIndex=0;
+  document.getElementById('kepernyo-start').classList.add('rejtett');
+  document.getElementById('kepernyo-idozitett').classList.remove('rejtett');
+  mutatKerdes();
+  window.scrollTo(0,0);
+});
+
+/* ====== IDOZITETT KERDES MEGJELENITESE ====== */
+function mutatKerdes(){
+  const tetel=idozitettLista[aktIndex];
+  const q=tetel.q;
+  const ossz=idozitettLista.length;
+  document.getElementById('halado-szoveg').textContent=`${aktIndex+1}. / ${ossz} kérdés`;
+  document.getElementById('szekcio-cimke').textContent = tetel.tag==='I' ? 'I. Választós kérdések' : 'II. Igaz / hamis';
+  document.getElementById('halado-bel').style.width = ((aktIndex)/ossz*100)+'%';
+  document.getElementById('lejart-jel').style.display='none';
+
+  const c=document.getElementById('kerdes-tartalom');
+  let h=`<div class="kerdes-cim"><span class="szam">${tetel.tag==='I'?q.sz:q.sz}.</span>${q.k}</div>`;
+  if(tetel.tag==='I'){
+    const tip=q.tobb?'checkbox':'radio';
+    if(q.tobb)h+=`<div style="font-size:13px;color:var(--halvany);margin-bottom:8px">Több válasz is megjelölhető.</div>`;
+    q.o.forEach((opt,i)=>{
+      h+=`<label class="valasz"><input type="${tip}" name="akt" value="${i}"><span>${esc(opt)}</span></label>`;
+    });
+  } else {
+    h+=`<label class="valasz"><input type="radio" name="akt" value="igaz"><span>Igaz</span></label>`;
+    h+=`<label class="valasz"><input type="radio" name="akt" value="hamis"><span>Hamis</span></label>`;
+  }
+  c.innerHTML=h;
+
+  document.getElementById('tovabb-gomb').disabled=false;
+  document.getElementById('tovabb-gomb').textContent = (aktIndex===ossz-1)?'Befejezés és tovább':'Következő kérdés';
+  inditKerdesTimer();
+}
+
+function inditKerdesTimer(){
+  hatra=KERDES_IDO;
+  frissitTimerKijelzo();
+  kerdesTimer=setInterval(()=>{
+    hatra--;
+    frissitTimerKijelzo();
+    if(hatra<=0){
+      clearInterval(kerdesTimer);
+      lejartKerdes();
+    }
+  },1000);
+}
+
+function frissitTimerKijelzo(){
+  const szam=document.getElementById('ido-szam');
+  const bel=document.getElementById('ido-bel');
+  szam.textContent=hatra;
+  const arany=Math.max(0,hatra/KERDES_IDO*100);
+  bel.style.width=arany+'%';
+  szam.classList.remove('fele','veszely');
+  bel.classList.remove('fele','veszely');
+  if(hatra<=10){szam.classList.add('veszely');bel.classList.add('veszely');}
+  else if(hatra<=20){szam.classList.add('fele');bel.classList.add('fele');}
+}
+
+function rogzitAktValasz(){
+  const tetel=idozitettLista[aktIndex];
+  const q=tetel.q;
+  if(tetel.tag==='I'){
+    const sel=[...document.querySelectorAll('input[name=akt]:checked')].map(x=>+x.value);
+    valaszokI[q.sz]=sel;
+  } else {
+    const sel=document.querySelector('input[name=akt]:checked');
+    valaszokII[q.sz]=sel?sel.value:null;
+  }
+}
+
+function lejartKerdes(){
+  // valasz rogzitese, beviteli mezok zarolasa, majd automatikus tovabblepes
+  rogzitAktValasz();
+  document.querySelectorAll('input[name=akt]').forEach(i=>{i.disabled=true;i.closest('label').classList.add('zar');});
+  document.getElementById('tovabb-gomb').disabled=true;
+  document.getElementById('lejart-jel').style.display='block';
+  setTimeout(()=>{ lepKovetkezo(); },1500);
+}
+
+document.getElementById('tovabb-gomb').addEventListener('click',()=>{
+  if(kerdesTimer)clearInterval(kerdesTimer);
+  rogzitAktValasz();
+  lepKovetkezo();
+});
+
+function lepKovetkezo(){
+  if(kerdesTimer)clearInterval(kerdesTimer);
+  aktIndex++;
+  if(aktIndex<idozitettLista.length){
+    mutatKerdes();
+    window.scrollTo(0,0);
+  } else {
+    indulGyakorlati();
+  }
+}
+
+/* ====== GYAKORLATI RESZ (III + IV) ====== */
+function indulGyakorlati(){
+  document.getElementById('kepernyo-idozitett').classList.add('rejtett');
+  const f=document.getElementById('gyak-form');
+  let h="";
+  h+=`<div class="kartya"><h2 class="szekcio">III. Gyakorlati kérdések</h2><div class="szekcio-info">3 pont / kérdés. A választ az oktató a helyszínen értékeli. Ezt a részt nem korlátozza idő.</div>`;
+  gyak_kerdes.forEach(q=>{
+    h+=`<div class="kerdes"><div class="kerdes-cim"><span class="szam">${q.sz}.</span>${q.k}</div>`;
+    h+=`<textarea name="gyk${q.sz}" placeholder="Írd le a válaszod..."></textarea></div>`;
+  });
+  h+=`</div>`;
+  h+=`<div class="kartya"><h2 class="szekcio">IV. Gyakorlati feladatok</h2><div class="szekcio-info">2 pont / feladat. Az elvégzett lépéseket az oktató a helyszínen értékeli. Ide leírhatod a lépéseket.</div>`;
+  gyak_feladat.forEach(q=>{
+    h+=`<div class="kerdes"><div class="kerdes-cim"><span class="szam">${q.sz}.</span>${q.k}</div>`;
+    h+=`<textarea name="gyf${q.sz}" placeholder="Írd le a lépéseket (nem kötelező)..."></textarea></div>`;
+  });
+  h+=`</div>`;
+  f.innerHTML=h;
+  document.getElementById('kepernyo-gyakorlati').classList.remove('rejtett');
+  window.scrollTo(0,0);
+}
+
+document.getElementById('bekuld-gomb').addEventListener('click',()=>{
+  if(confirm('Biztosan beküldöd a tesztet?'))bekuld();
+});
+
+/* ====== BEKULDES + AUTOMATIKUS PONTOZAS ====== */
+function bekuld(){
+  // I.
+  let pI=0, reszI=[];
+  valasztos.forEach(q=>{
+    const sel=valaszokI[q.sz]||[];
+    let pont=0, jo=false;
+    if(q.tobb){
+      const hSet=new Set(q.helyes);
+      const teljes = sel.length===q.helyes.length && sel.every(x=>hSet.has(x));
+      if(teljes){pont=q.pont;jo=true;}
+    } else {
+      if(sel.length===1 && q.helyes.includes(sel[0])){pont=q.pont;jo=true;}
+    }
+    pI+=pont;
+    reszI.push({q,sel,pont,jo});
+  });
+
+  // II.
+  let pII=0, reszII=[];
+  igazhamis.forEach(q=>{
+    const val=valaszokII[q.sz]||null;
+    const valBool = val==='igaz'?true:(val==='hamis'?false:null);
+    const jo = valBool===q.helyes;
+    if(jo)pII+=1;
+    reszII.push({q,val,jo});
+  });
+
+  const f=document.getElementById('gyak-form');
+  const valIII=gyak_kerdes.map(q=>({q,valasz:(f.querySelector(`textarea[name=gyk${q.sz}]`).value||'').trim()}));
+  const valIV =gyak_feladat.map(q=>({q,valasz:(f.querySelector(`textarea[name=gyf${q.sz}]`).value||'').trim()}));
+
+  mutatEredmeny({pI,reszI,pII,reszII,valIII,valIV});
+}
+
+/* ====== EREDMENY + OKTATOI JAVITAS ====== */
+function mutatEredmeny(d){
+  document.getElementById('kepernyo-gyakorlati').classList.add('rejtett');
+  document.getElementById('kepernyo-eredmeny').classList.remove('rejtett');
+  window.scrollTo(0,0);
+
+  const idotartam=Math.round((new Date()-kezdes)/60000);
+  let h="";
+
+  h+=`<div class="kartya">
+    <h2 class="szekcio">Eredmény és javítás</h2>
+    <div style="margin-top:14px;font-size:15px">
+      <div><b>Kitöltő:</b> ${esc(kitoltoNev)}</div>
+      ${oktatoNev?`<div><b>Oktató:</b> ${esc(oktatoNev)}</div>`:''}
+      <div><b>Dátum:</b> ${new Date().toLocaleString('hu-HU')}</div>
+      <div><b>Kitöltési idő:</b> kb. ${idotartam} perc</div>
+    </div>
+    <div class="info-doboz nyomtatas-rejtett" style="margin-top:18px">
+      Oktatói teendő: a III. és IV. szekciónál add meg a pontokat a megoldókulcs alapján. A végpontszám, a százalék és a minősítés automatikusan frissül. Ha kész, használd a Nyomtatás vagy a Letöltés gombot az összesítő mentéséhez.
+    </div>
+  </div>`;
+
+  h+=`<div class="kartya"><div id="pont-doboz"></div><div id="resz-osszesito"></div>
+    <div style="font-size:13px;color:var(--halvany);margin-top:14px">
+      Minősítés: Kiváló ${SKALA[0].minSzaz}% felett, Közepes ${SKALA[1].minSzaz}–${SKALA[0].minSzaz-1}%, Gyenge ${SKALA[1].minSzaz}% alatt.
+    </div>
+  </div>`;
+
+  // I.
+  h+=`<div class="kartya"><h2 class="szekcio">I. Választós kérdések <span class="badge">${d.pI} / ${MAX_I} pont</span></h2>`;
+  d.reszI.forEach(r=>{
+    h+=`<div class="kerdes"><div class="kerdes-cim"><span class="szam">${r.q.sz}.</span>${esc(r.q.k)} <span class="${r.jo?'jo':'rossz'}" style="float:right;font-size:14px">${r.pont}/${r.q.pont} pont</span></div>`;
+    r.q.o.forEach((opt,i)=>{
+      const helyes=r.q.helyes.includes(i);
+      const valasztott=r.sel.includes(i);
+      let cl='valasz';
+      if(helyes)cl+=' helyes-jeloles';
+      else if(valasztott)cl+=' rossz-jeloles';
+      let jel='';
+      if(valasztott && helyes)jel=' ✔ (te is ezt jelölted)';
+      else if(helyes)jel=' ✔';
+      else if(valasztott && !helyes)jel=' ✘ (te ezt jelölted)';
+      h+=`<div class="${cl}"><span>${esc(opt)}${jel}</span></div>`;
+    });
+    if(r.sel.length===0)h+=`<div style="font-size:13px;color:var(--piros);margin-top:4px">Nem érkezett válasz (lejárt az idő).</div>`;
+    h+=`</div>`;
+  });
+  h+=`</div>`;
+
+  // II.
+  h+=`<div class="kartya"><h2 class="szekcio">II. Igaz / hamis <span class="badge">${d.pII} / ${MAX_II} pont</span></h2>`;
+  d.reszII.forEach(r=>{
+    const helyesSzo=r.q.helyes?'Igaz':'Hamis';
+    const sajatSzo=r.val?(r.val==='igaz'?'Igaz':'Hamis'):'– nincs válasz –';
+    h+=`<div class="kerdes"><div class="kerdes-cim"><span class="szam">${r.q.sz}.</span>${esc(r.q.k)} <span class="${r.jo?'jo':'rossz'}" style="float:right;font-size:14px">${r.jo?1:0}/1 pont</span></div>
+      <div style="font-size:14px">Te: <b class="${r.jo?'jo':'rossz'}">${sajatSzo}</b> &nbsp;|&nbsp; Helyes: <b class="jo">${helyesSzo}</b>${r.q.megj?` <span style="color:var(--halvany)">(${esc(r.q.megj)})</span>`:''}</div>
+    </div>`;
+  });
+  h+=`</div>`;
+
+  // III.
+  h+=`<div class="kartya"><h2 class="szekcio">III. Gyakorlati kérdések <span class="badge" id="badge-III">0 / ${MAX_III} pont</span></h2>
+    <div class="szekcio-info">Oktatói pontozás kérdésenként 0–3 pont.</div>`;
+  d.valIII.forEach(r=>{
+    h+=`<div class="jav-blokk">
+      <div class="qcim">${r.q.sz}. ${esc(r.q.k)}</div>
+      <div class="jav-valasz">${r.valasz?esc(r.valasz):'<i style="color:var(--halvany)">nincs leírt válasz</i>'}</div>
+      <div class="kulcs"><b>Megoldókulcs:</b> ${r.q.kulcs.map(esc).join('; ')}</div>
+      <div class="pontvalaszto nyomtatas-rejtett">
+        <label>Pont:</label>
+        <select class="pont-III">${[0,1,2,3].map(p=>`<option value="${p}">${p}</option>`).join('')}</select>
+        <span>/ ${r.q.pont}</span>
+      </div>
+    </div>`;
+  });
+  h+=`</div>`;
+
+  // IV.
+  h+=`<div class="kartya"><h2 class="szekcio">IV. Gyakorlati feladatok <span class="badge" id="badge-IV">0 / ${MAX_IV} pont</span></h2>
+    <div class="szekcio-info">Oktatói pontozás feladatonként 0–2 pont.</div>`;
+  d.valIV.forEach(r=>{
+    h+=`<div class="jav-blokk">
+      <div class="qcim">${r.q.sz}. ${esc(r.q.k)}</div>
+      <div class="jav-valasz">${r.valasz?esc(r.valasz):'<i style="color:var(--halvany)">nincs leírt válasz</i>'}</div>
+      <div class="kulcs"><b>Elvárt lépések:</b> ${r.q.kulcs.map(esc).join('; ')}</div>
+      <div class="pontvalaszto nyomtatas-rejtett">
+        <label>Pont:</label>
+        <select class="pont-IV">${[0,1,2].map(p=>`<option value="${p}">${p}</option>`).join('')}</select>
+        <span>/ ${r.q.pont}</span>
+      </div>
+    </div>`;
+  });
+  h+=`</div>`;
+
+  h+=`<div class="kartya nyomtatas-rejtett">
+    <div class="gombsor">
+      <button class="gomb" onclick="window.print()">Nyomtatás / PDF mentés</button>
+      <button class="gomb masodlagos" id="letolt-gomb">Összesítő letöltése (szöveg)</button>
+    </div>
+    <p style="font-size:13px;color:var(--halvany);margin-top:10px">A teljes oldal kinyomtatható vagy PDF-be menthető a böngésző nyomtatás funkciójával.</p>
+  </div>`;
+
+  document.getElementById('eredmeny-tartalom').innerHTML=h;
+
+  const allapot={pI:d.pI,pII:d.pII,pIII:0,pIV:0,d};
+  function frissit(){
+    let pIII=0;document.querySelectorAll('.pont-III').forEach(s=>pIII+=+s.value);
+    let pIV=0;document.querySelectorAll('.pont-IV').forEach(s=>pIV+=+s.value);
+    allapot.pIII=pIII;allapot.pIV=pIV;
+    document.getElementById('badge-III').textContent=`${pIII} / ${MAX_III} pont`;
+    document.getElementById('badge-IV').textContent=`${pIV} / ${MAX_IV} pont`;
+    const ossz=d.pI+d.pII+pIII+pIV;
+    const m=minosit(ossz);
+    document.getElementById('pont-doboz').innerHTML=`
+      <div class="pontdoboz" style="background:${m.szin}">
+        <div class="nagy">${ossz} / ${OSSZ_PONT}</div>
+        <div class="szaz">${m.szaz}%</div>
+        <div class="min">${m.szint}</div>
+        <div class="alcim">${m.minosites}</div>
+      </div>`;
+    document.getElementById('resz-osszesito').innerHTML=`
+      <div class="reszpont"><span>I. Választós kérdések</span><span class="ertek">${d.pI} / ${MAX_I}</span></div>
+      <div class="reszpont"><span>II. Igaz / hamis</span><span class="ertek">${d.pII} / ${MAX_II}</span></div>
+      <div class="reszpont"><span>III. Gyakorlati kérdések</span><span class="ertek">${pIII} / ${MAX_III}</span></div>
+      <div class="reszpont"><span>IV. Gyakorlati feladatok</span><span class="ertek">${pIV} / ${MAX_IV}</span></div>
+      <div class="reszpont" style="font-weight:700"><span>Összesen</span><span class="ertek">${ossz} / ${OSSZ_PONT}</span></div>`;
+  }
+  document.querySelectorAll('.pont-III,.pont-IV').forEach(s=>s.addEventListener('change',frissit));
+  frissit();
+  document.getElementById('letolt-gomb').addEventListener('click',()=>letolt(allapot));
+}
+
+function letolt(a){
+  const d=a.d;
+  const ossz=d.pI+d.pII+a.pIII+a.pIV;
+  const m=minosit(ossz);
+  let t=`VECTORY ERP SZINTFELMÉRŐ - EREDMÉNY\n`;
+  t+=`========================================\n`;
+  t+=`Kitöltő: ${kitoltoNev}\n`;
+  if(oktatoNev)t+=`Oktató: ${oktatoNev}\n`;
+  t+=`Dátum: ${new Date().toLocaleString('hu-HU')}\n\n`;
+  t+=`RÉSZEREDMÉNYEK\n`;
+  t+=`I.   Választós kérdések: ${d.pI} / ${MAX_I}\n`;
+  t+=`II.  Igaz / hamis:       ${d.pII} / ${MAX_II}\n`;
+  t+=`III. Gyakorlati kérdések:${a.pIII} / ${MAX_III}\n`;
+  t+=`IV.  Gyakorlati feladat: ${a.pIV} / ${MAX_IV}\n`;
+  t+=`----------------------------------------\n`;
+  t+=`ÖSSZESEN: ${ossz} / ${OSSZ_PONT} (${m.szaz}%)\n`;
+  t+=`SZINT: ${m.szint} - ${m.minosites}\n\n`;
+  t+=`RÉSZLETES VÁLASZOK\n`;
+  t+=`--- I. Választós ---\n`;
+  d.reszI.forEach(r=>{t+=`${r.q.sz}. ${r.jo?'OK':'X'} (${r.pont}/${r.q.pont})${r.sel.length===0?' [nincs válasz]':''}\n`;});
+  t+=`--- II. Igaz/hamis ---\n`;
+  d.reszII.forEach(r=>{t+=`${r.q.sz}. ${r.jo?'OK':'X'}\n`;});
+  t+=`--- III. Gyakorlati kérdések ---\n`;
+  d.valIII.forEach(r=>{t+=`${r.q.sz}. ${r.valasz||'(nincs válasz)'}\n`;});
+  t+=`--- IV. Gyakorlati feladatok ---\n`;
+  d.valIV.forEach(r=>{t+=`${r.q.sz}. ${r.valasz||'(nincs leírt válasz)'}\n`;});
+  const blob=new Blob([t],{type:'text/plain;charset=utf-8'});
+  const a2=document.createElement('a');
+  a2.href=URL.createObjectURL(blob);
+  a2.download=`Vectory_eredmeny_${kitoltoNev.replace(/\s+/g,'_')}.txt`;
+  a2.click();
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>
